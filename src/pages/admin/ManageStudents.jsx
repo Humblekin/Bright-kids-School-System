@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { collection, getDocs, updateDoc, deleteDoc, doc, addDoc } from 'firebase/firestore';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sanitize } from '../../utils/sanitize';
 
 export default function ManageStudents() {
   const [students, setStudents] = useState([]);
@@ -61,11 +62,11 @@ export default function ManageStudents() {
     setSaving(true);
     setError('');
     try {
+      const data = { name: sanitize(form.name), classId: form.classId, studentId: form.studentId, parentContact: sanitize(form.parentContact), gender: form.gender, dob: form.dob };
       if (editingStudent) {
-        const data = { name: form.name, classId: form.classId, studentId: form.studentId, parentContact: form.parentContact, gender: form.gender, dob: form.dob };
         await updateDoc(doc(db, 'students', editingStudent.id), data);
       } else {
-        await addDoc(collection(db, 'students'), { name: form.name, classId: form.classId, studentId: form.studentId, parentContact: form.parentContact, gender: form.gender, dob: form.dob });
+        await addDoc(collection(db, 'students'), data);
       }
       setShowModal(false);
       fetchData();

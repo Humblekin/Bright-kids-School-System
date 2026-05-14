@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sanitize } from '../../utils/sanitize';
 
 export default function ManageClasses() {
   const [classes, setClasses] = useState([]);
@@ -43,8 +44,9 @@ export default function ManageClasses() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      if (editing) { await updateDoc(doc(db, 'classes', editing.id), form); }
-      else { await addDoc(collection(db, 'classes'), form); }
+      const data = { name: sanitize(form.name), subjects: form.subjects };
+      if (editing) { await updateDoc(doc(db, 'classes', editing.id), data); }
+      else { await addDoc(collection(db, 'classes'), data); }
       setShowModal(false); fetchData();
     } catch (err) { console.error(err); }
   };

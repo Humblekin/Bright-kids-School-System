@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { collection, getDocs, addDoc, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 import { FiDollarSign, FiPlus, FiSearch, FiCheck, FiX, FiFilter } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sanitize } from '../../utils/sanitize';
 
 const FEE_TYPES = [
   { key: 'school', label: 'School Fees', color: 'blue' },
@@ -67,11 +68,11 @@ export default function ManageFees() {
         studentName: selectedStudent.name,
         classId: selectedStudent.classId,
         feeType: feeTypeFilter,
-        feeSubType: feeTypeFilter === 'other' ? otherFeeLabel : '',
+        feeSubType: feeTypeFilter === 'other' ? sanitize(otherFeeLabel) : '',
         term: paymentForm.term,
         amount: parseFloat(paymentForm.amount),
         date: paymentForm.date,
-        note: paymentForm.note,
+        note: sanitize(paymentForm.note),
         createdAt: serverTimestamp(),
       });
       setShowModal(false);

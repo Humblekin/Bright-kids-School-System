@@ -4,6 +4,7 @@ import { collection, getDocs, addDoc, deleteDoc, doc, orderBy, query } from 'fir
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import Layout from '../../components/Layout';
+import { sanitize } from '../../utils/sanitize';
 
 export default function Announcements({ readOnly = false }) {
   const { userData } = useAuth();
@@ -31,7 +32,9 @@ export default function Announcements({ readOnly = false }) {
     e.preventDefault();
     try {
       await addDoc(collection(db, 'announcements'), {
-        ...form,
+        title: sanitize(form.title),
+        message: sanitize(form.message),
+        target: form.target,
         date: new Date().toISOString().split('T')[0],
         author: userData?.name || 'Unknown',
         authorRole: userData?.role || 'admin'

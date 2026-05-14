@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { FiSave, FiUpload, FiCheck, FiImage, FiX } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sanitize } from '../../utils/sanitize';
 
 export default function SchoolSettings() {
   const [loading, setLoading] = useState(true);
@@ -51,9 +52,9 @@ export default function SchoolSettings() {
     setSaving(true);
     try {
       await setDoc(doc(db, 'settings', 'school'), {
-        schoolName: form.schoolName,
-        academicYear: form.academicYear,
-        badgeUrl,
+        schoolName: sanitize(form.schoolName),
+        academicYear: sanitize(form.academicYear),
+        badgeUrl: badgeUrl && (badgeUrl.startsWith('data:image/') || badgeUrl.startsWith('https://')) ? badgeUrl : '',
       });
       setToast({ type: 'success', message: 'Settings saved successfully' });
     } catch (err) {

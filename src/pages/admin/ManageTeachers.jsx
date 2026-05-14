@@ -4,6 +4,7 @@ import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from '
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sanitize } from '../../utils/sanitize';
 
 export default function ManageTeachers() {
   const [teachers, setTeachers] = useState([]);
@@ -59,16 +60,15 @@ export default function ManageTeachers() {
     setSaving(true);
     setError('');
     try {
+      const name = sanitize(form.name);
       if (editing) { 
-        // Editing existing teacher (does not update email/password)
         await updateDoc(doc(db, 'teachers', editing.id), {
-          name: form.name,
+          name,
           subjects: form.subjects,
           classes: form.classes
         }); 
       }
       else { 
-        // Create new teacher Auth account
         if (!form.email || !form.password) {
           setError("Email and Password are required for new teachers.");
           setSaving(false);
@@ -78,15 +78,13 @@ export default function ManageTeachers() {
         const userCred = await createUserWithEmailAndPassword(secondaryAuth, form.email, form.password);
         const uid = userCred.user.uid;
         
-        // Register role in users collection
         await setDoc(doc(db, 'users', uid), {
-          name: form.name,
+          name,
           role: 'teacher'
         });
 
-        // Add to teachers collection
         await setDoc(doc(db, 'teachers', uid), {
-          name: form.name,
+          name,
           subjects: form.subjects,
           classes: form.classes,
           email: form.email

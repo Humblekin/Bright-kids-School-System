@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sanitize } from '../../utils/sanitize';
 
 export default function ManageSubjects() {
   const [subjects, setSubjects] = useState([]);
@@ -31,7 +32,7 @@ export default function ManageSubjects() {
   const handleSave = async (e) => {
     e.preventDefault();
     try {
-      await addDoc(collection(db, 'subjects'), { name: form.name });
+      await addDoc(collection(db, 'subjects'), { name: sanitize(form.name) });
       setShowModal(false);
       setForm({ name: '' });
       fetchData();
