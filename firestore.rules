@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function hasRole(role) {
+      return isAuth()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    match /users/{userId} {
+      allow read: if isAuth() && (request.auth.uid == userId || hasRole('admin'));
+      allow create: if hasRole('admin');
+      allow update: if request.auth.uid == userId || hasRole('admin');
+      allow delete: if hasRole('admin');
+    }
+
+    match /students/{studentId} {
+      allow read: if isAuth();
+      allow create, update, delete: if hasRole('admin');
+    }
+
+    match /teachers/{teacherId} {
+      allow read: if isAuth();
+      allow create, update, delete: if hasRole('admin');
+    }
+
+    match /classes/{classId} {
+      allow read: if isAuth();
+      allow create, update, delete: if hasRole('admin');
+    }
+
+    match /subjects/{subjectId} {
+      allow read: if isAuth();
+      allow create, update, delete: if hasRole('admin');
+    }
+
+    match /results/{resultId} {
+      allow read: if isAuth();
+      allow create, update, delete: if hasRole('admin') || hasRole('teacher');
+    }
+
+    match /attendance/{attendanceId} {
+      allow read: if isAuth();
+      allow create, update, delete: if hasRole('admin') || hasRole('teacher');
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if isAuth();
+      allow create, update, delete: if hasRole('admin');
+    }
+
+    match /fees/{feeId} {
+      allow read: if isAuth();
+      allow create, update, delete: if hasRole('admin');
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuth();
+      allow write: if hasRole('admin');
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
