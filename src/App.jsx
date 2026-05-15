@@ -14,7 +14,6 @@ import ManageClasses from './pages/admin/ManageClasses';
 import ManageSubjects from './pages/admin/ManageSubjects';
 import ManageFees from './pages/admin/ManageFees';
 import SchoolSettings from './pages/admin/SchoolSettings';
-import SmsSender from './pages/admin/SmsSender';
 import ReportCards from './pages/admin/ReportCards';
 
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -38,7 +37,6 @@ export default function App() {
           <Route path="/admin/announcements" element={<ProtectedRoute allowedRoles={['admin']}><Announcements /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><ReportCards /></ProtectedRoute>} />
           <Route path="/admin/fees" element={<ProtectedRoute allowedRoles={['admin']}><ManageFees /></ProtectedRoute>} />
-          <Route path="/admin/sms" element={<ProtectedRoute allowedRoles={['admin']}><SmsSender /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><SchoolSettings /></ProtectedRoute>} />
           <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={['admin']}><Profile /></ProtectedRoute>} />
 

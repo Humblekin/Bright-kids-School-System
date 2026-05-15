@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FiHome, FiUsers, FiBook, FiCalendar, FiClipboard, FiLayers, FiBell, FiUser, FiLogOut, FiMenu, FiX, FiAward, FiMessageSquare, FiDollarSign, FiSettings } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBook, FiCalendar, FiClipboard, FiLayers, FiBell, FiUser, FiLogOut, FiMenu, FiX, FiAward, FiDollarSign, FiSettings } from 'react-icons/fi';
 
 const adminNav = [
   { section: 'Main', items: [
@@ -18,7 +18,6 @@ const adminNav = [
     { to: '/admin/announcements', icon: <FiBell />, label: 'Announcements' },
     { to: '/admin/reports', icon: <FiClipboard />, label: 'Report Cards' },
     { to: '/admin/fees', icon: <FiDollarSign />, label: 'Manage Fees' },
-    { to: '/admin/sms', icon: <FiMessageSquare />, label: 'Send SMS' },
   ]},
   { section: 'System', items: [
     { to: '/admin/settings', icon: <FiSettings />, label: 'School Settings' },

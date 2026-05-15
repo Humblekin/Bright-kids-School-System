@@ -14,7 +14,7 @@ export default function ManageStudents() {
   const [search, setSearch] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: '', classId: '', studentId: '', parentContact: '', gender: 'Male', dob: '' });
+  const [form, setForm] = useState({ name: '', classId: '', studentId: '', gender: 'Male', dob: '' });
 
   useEffect(() => {
     fetchData();
@@ -46,14 +46,14 @@ export default function ManageStudents() {
   const openAdd = () => {
     setEditingStudent(null);
     setError('');
-    setForm({ name: '', classId: '', studentId: generateStudentId(), parentContact: '', gender: 'Male', dob: '' });
+    setForm({ name: '', classId: '', studentId: generateStudentId(),  gender: 'Male', dob: '' });
     setShowModal(true);
   };
 
   const openEdit = (s) => {
     setEditingStudent(s);
     setError('');
-    setForm({ name: s.name, classId: s.classId || '', studentId: s.studentId || '', parentContact: s.parentContact || '', gender: s.gender || 'Male', dob: s.dob || '' });
+    setForm({ name: s.name, classId: s.classId || '', studentId: s.studentId || '', gender: s.gender || 'Male', dob: s.dob || '' });
     setShowModal(true);
   };
 
@@ -62,7 +62,7 @@ export default function ManageStudents() {
     setSaving(true);
     setError('');
     try {
-      const data = { name: sanitize(form.name), classId: form.classId, studentId: form.studentId, parentContact: sanitize(form.parentContact), gender: form.gender, dob: form.dob };
+      const data = { name: sanitize(form.name), classId: form.classId, studentId: form.studentId, gender: form.gender, dob: form.dob };
       if (editingStudent) {
         await updateDoc(doc(db, 'students', editingStudent.id), data);
       } else {
@@ -118,7 +118,7 @@ export default function ManageStudents() {
           ) : (
             <table className="data-table">
               <thead>
-                <tr><th>Name</th><th>Student ID</th><th>Class</th><th>Gender</th><th>Parent Contact</th><th>Actions</th></tr>
+                <tr><th>Name</th><th>Student ID</th><th>Class</th><th>Gender</th><th>Actions</th></tr>
               </thead>
               <tbody>
                 {filtered.map(s => (
@@ -132,7 +132,6 @@ export default function ManageStudents() {
                     <td>{s.studentId || '—'}</td>
                     <td><span className="badge badge-student">{getClassName(s.classId)}</span></td>
                     <td>{s.gender || '—'}</td>
-                    <td>{s.parentContact || '—'}</td>
                     <td>
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button className="btn btn-icon btn-sm" onClick={() => openEdit(s)}><FiEdit2 /></button>
@@ -186,10 +185,6 @@ export default function ManageStudents() {
                     <label className="form-label">Date of Birth</label>
                     <input type="date" className="form-input" value={form.dob} onChange={e => setForm({...form, dob: e.target.value})} />
                   </div>
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Parent Contact</label>
-                  <input className="form-input" value={form.parentContact} onChange={e => setForm({...form, parentContact: e.target.value})} />
                 </div>
               </div>
               <div className="modal-footer">
