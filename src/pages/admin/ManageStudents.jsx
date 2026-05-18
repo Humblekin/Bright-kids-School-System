@@ -94,10 +94,24 @@ export default function ManageStudents() {
 
   const getClassName = (classId) => classes.find(c => c.id === classId)?.name || '—';
 
+  const classCounts = classes.map(c => ({
+    ...c,
+    count: students.filter(s => s.classId === c.id).length
+  }));
+
   if (loading) return <Layout><div className="loading-spinner"><div className="spinner"></div></div></Layout>;
 
   return (
     <Layout>
+      <div className="stats-grid" style={{ marginBottom: 16 }}>
+        {classCounts.map(c => (
+          <div key={c.id} className="stat-card" style={{ padding: '12px 16px' }}>
+            <div className="stat-card-value" style={{ fontSize: 20 }}>{c.count}</div>
+            <div className="stat-card-label">{c.name}</div>
+          </div>
+        ))}
+      </div>
+
       <div className="search-bar">
         <div className="search-input-wrapper">
           <FiSearch className="search-icon" />
