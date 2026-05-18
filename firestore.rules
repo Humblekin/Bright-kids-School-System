@@ -56,7 +56,8 @@ service cloud.firestore {
 
     match /fees/{feeId} {
       allow read: if isAuth();
-      allow create, update, delete: if hasRole('admin');
+      allow create: if hasRole('admin');
+      allow update, delete: if false;
     }
 
     match /settings/{settingId} {
