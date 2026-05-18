@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
-import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
-import { FiDollarSign, FiPlus, FiSearch, FiCheck, FiX, FiSettings, FiActivity, FiUser, FiCalendar, FiArrowRight } from 'react-icons/fi';
+import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { FiDollarSign, FiPlus, FiSearch, FiCheck, FiX, FiSettings, FiActivity, FiUser, FiCalendar, FiArrowRight, FiTrash2 } from 'react-icons/fi';
 import Layout from '../../components/Layout';
-import { sanitize } from '../../utils/sanitize';
+import { sanitize, sortClasses } from '../../utils/sanitize';
 
 const ACADEMIC_MONTHS = [
   { name: 'September', index: 9 },
@@ -56,7 +56,7 @@ export default function ManageFees() {
   const [toast, setToast] = useState(null);
   
   const [otherFeeLabel, setOtherFeeLabel] = useState('');
-  const [paymentForm, setPaymentForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], note: '' });
+  const [paymentForm, setPaymentForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], note: '', paymentMethod: 'Cash' });
   
   const [settingsForm, setSettingsForm] = useState({
     defaultSchoolFee: '150',
@@ -78,7 +78,7 @@ export default function ManageFees() {
         getDoc(doc(db, 'settings', 'fees')),
       ]);
 
-      const loadedClasses = classSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const loadedClasses = sortClasses(classSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setStudents(studSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       setClasses(loadedClasses);
       setPayments(paymentsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -241,6 +241,7 @@ export default function ManageFees() {
       amount: '', 
       date: new Date().toISOString().split('T')[0], 
       note: '',
+      paymentMethod: 'Cash',
       month: getCurrentAcademicMonthName()
     });
     setOtherFeeLabel('');
@@ -264,6 +265,7 @@ export default function ManageFees() {
         feeType: feeTypeFilter,
         feeSubType,
         month: feeTypeFilter === 'other' ? '' : paymentForm.month,
+        paymentMethod: paymentForm.paymentMethod,
         amount: parseFloat(paymentForm.amount),
         date: paymentForm.date,
         note: sanitize(paymentForm.note),
@@ -271,6 +273,22 @@ export default function ManageFees() {
       });
       setShowModal(false);
       showToastMsg('success', `₵${parseFloat(paymentForm.amount).toFixed(2)} recorded for ${selectedStudent.name}`);
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      showToastMsg('error', err.message);
+    }
+    setSaving(false);
+  };
+
+  const handleDeletePayment = async (paymentId, amount, studentName) => {
+    if (!window.confirm(`Are you sure you want to delete this payment of ₵${amount.toFixed(2)} for ${studentName}? This action cannot be undone.`)) {
+      return;
+    }
+    setSaving(true);
+    try {
+      await deleteDoc(doc(db, 'fees', paymentId));
+      showToastMsg('success', 'Payment deleted successfully!');
       fetchData();
     } catch (err) {
       console.error(err);
@@ -291,7 +309,7 @@ export default function ManageFees() {
   // Calculate high level KPIs
   const totalStudents = students.length;
   const totalCollected = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-  const totalArrears = students.reduce((sum, s) => {
+  const totalUnpaid = students.reduce((sum, s) => {
     if (feeTypeFilter === 'other') return sum;
     const info = getStudentLedger(s, feeTypeFilter);
     return sum + info.totalOwed;
@@ -316,10 +334,10 @@ export default function ManageFees() {
         {feeTypeFilter !== 'other' && (
           <div className="stat-card">
             <div className="stat-card-icon orange"><FiDollarSign /></div>
-            <div className="stat-card-value" style={{ color: totalArrears > 0 ? 'var(--accent-red)' : 'var(--accent-green)' }}>
-              ₵{totalArrears.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <div className="stat-card-value" style={{ color: totalUnpaid > 0 ? 'var(--accent-red)' : 'var(--accent-green)' }}>
+              ₵{totalUnpaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            <div className="stat-card-label">Total Outstanding Arrears ({feeTypeFilter === 'school' ? 'School Fees' : 'Feeding Fees'})</div>
+            <div className="stat-card-label">Total Unpaid ({feeTypeFilter === 'school' ? 'School Fees' : 'Feeding Fees'})</div>
           </div>
         )}
       </div>
@@ -509,7 +527,7 @@ export default function ManageFees() {
                             ) : info.totalPaid > 0 ? (
                               <span className="badge badge-teacher">⚠️ Partially Paid</span>
                             ) : (
-                              <span className="badge badge-absent">❌ Unpaid Arrears</span>
+                              <span className="badge badge-absent">❌ Unpaid</span>
                             )}
                           </td>
                         </>
@@ -567,7 +585,7 @@ export default function ManageFees() {
                           <th style={{ padding: 12, textAlign: 'left', fontWeight: 700, color: 'var(--text)' }}>Billing Month</th>
                           <th style={{ padding: 12, textAlign: 'right', fontWeight: 700, color: 'var(--text)' }}>Required Fee</th>
                           <th style={{ padding: 12, textAlign: 'right', fontWeight: 700, color: 'var(--text)' }}>Amount Paid</th>
-                          <th style={{ padding: 12, textAlign: 'right', fontWeight: 700, color: 'var(--text)' }}>Remaining Arrears</th>
+                          <th style={{ padding: 12, textAlign: 'right', fontWeight: 700, color: 'var(--text)' }}>Remaining Unpaid</th>
                           <th style={{ padding: 12, textAlign: 'center', fontWeight: 700, color: 'var(--text)' }}>Status</th>
                         </tr>
                       </thead>
@@ -596,7 +614,7 @@ export default function ManageFees() {
                             statusBg = 'rgba(239, 68, 68, 0.08)';
                             statusBorder = '1px solid var(--accent-red)';
                             statusColor = 'var(--accent-red)';
-                            statusLabel = 'Arrears Owed ❌';
+                            statusLabel = 'Unpaid ❌';
                           }
 
                           return (
@@ -628,7 +646,7 @@ export default function ManageFees() {
                     </table>
                   </div>
                   
-                  {/* Arrears and Ledger Overview */}
+                  {/* Ledger Overview */}
                   {(() => {
                     const totalExpected = info.ledger.filter(item => item.isDue).reduce((sum, item) => sum + item.rate, 0);
                     return (
@@ -640,7 +658,7 @@ export default function ManageFees() {
                           </strong>
                         </div>
                         <div style={{ padding: 12, background: 'var(--bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)' }}>
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Months Owed (Arrears)</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Months Owed (Unpaid)</span>
                           <strong style={{ display: 'block', fontSize: 14, color: 'var(--accent-red)', marginTop: 4, maxHeight: 40, overflowY: 'auto' }}>
                             {info.owedMonths.length === 0 ? 'None' : info.owedMonths.join(', ')}
                           </strong>
@@ -656,9 +674,9 @@ export default function ManageFees() {
                           <span style={{ fontSize: 9, color: 'var(--text-muted)' }}>Total paid to date</span>
                         </div>
                         <div style={{ padding: 12, background: 'var(--bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
-                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Total Arrears Owed</span>
+                          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Total Unpaid</span>
                           <strong style={{ display: 'block', fontSize: 20, color: 'var(--accent-red)', marginTop: 4 }}>₵{info.totalOwed.toFixed(2)}</strong>
-                          <span style={{ fontSize: 9, color: 'var(--accent-red)', fontWeight: 600 }}>Arrears outstanding</span>
+                          <span style={{ fontSize: 9, color: 'var(--accent-red)', fontWeight: 600 }}>Unpaid</span>
                         </div>
                       </div>
                     );
@@ -669,9 +687,9 @@ export default function ManageFees() {
               const otherPayments = payments.filter(p => p.studentId === selectedStudent.id && p.feeType === 'other');
               const otherPaid = otherPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
               return (
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: 20 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: 20 }}>
                   <strong>Other Fees Ledger (Custom one-offs)</strong>
-                  <strong style={{ fontSize: 18, color: 'var(--accent-green)' }}>Total Recieved: ₵{otherPaid.toFixed(2)}</strong>
+                  <strong style={{ fontSize: 18, color: 'var(--accent-green)' }}>Total Received: ₵{otherPaid.toFixed(2)}</strong>
                 </div>
               );
             })()}
@@ -687,7 +705,7 @@ export default function ManageFees() {
             ) : (
               <table className="data-table">
                 <thead>
-                  <tr><th>Date Recieved</th><th>Payment Method / Details</th><th>Amount Credited</th><th>Admin Memo Note</th></tr>
+                  <tr><th>Date Received</th><th>Payment Method</th><th>Amount Credited</th><th>Admin Memo Note</th><th style={{ textAlign: 'center' }}>Actions</th></tr>
                 </thead>
                 <tbody>
                   {payments.filter(p => p.studentId === selectedStudent.id && p.feeType === feeTypeFilter).map(p => (
@@ -697,9 +715,22 @@ export default function ManageFees() {
                         <span className={`badge badge-${p.feeType === 'school' ? 'admin' : p.feeType === 'feeding' ? 'student' : 'teacher'}`}>
                           {p.feeType === 'school' ? '🏫 School Fees' : p.feeType === 'feeding' ? '🍽️ Feeding Fees' : `➕ Other: ${p.feeSubType}`}
                         </span>
+                        {p.paymentMethod && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{p.paymentMethod}</div>}
                       </td>
                       <td><strong style={{ color: 'var(--accent-green)' }}>₵{p.amount.toFixed(2)}</strong></td>
                       <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{p.note || '—'}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          type="button"
+                          className="btn btn-icon btn-sm"
+                          style={{ color: 'var(--accent-red)', padding: 6 }}
+                          onClick={() => handleDeletePayment(p.id, p.amount, selectedStudent.name)}
+                          disabled={saving}
+                          title="Delete Payment Record"
+                        >
+                          <FiTrash2 />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -747,6 +778,17 @@ export default function ManageFees() {
                       {ACADEMIC_MONTHS.map(m => (
                         <option key={m.name} value={m.name}>{m.name}</option>
                       ))}
+                    </select>
+                  </div>
+                )}
+                {feeTypeFilter !== 'other' && (
+                  <div className="form-group">
+                    <label className="form-label">Payment Method</label>
+                    <select className="form-select" value={paymentForm.paymentMethod} onChange={e => setPaymentForm({...paymentForm, paymentMethod: e.target.value})}>
+                      <option value="Cash">Cash</option>
+                      <option value="Mobile Money">Mobile Money</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Cheque">Cheque</option>
                     </select>
                   </div>
                 )}

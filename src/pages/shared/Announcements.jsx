@@ -4,7 +4,7 @@ import { collection, getDocs, addDoc, deleteDoc, doc, orderBy, query } from 'fir
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../../contexts/AuthContext';
 import Layout from '../../components/Layout';
-import { sanitize } from '../../utils/sanitize';
+import { sanitize, sortClasses } from '../../utils/sanitize';
 
 export default function Announcements({ readOnly = false }) {
   const { userData } = useAuth();
@@ -23,7 +23,7 @@ export default function Announcements({ readOnly = false }) {
         getDocs(collection(db, 'classes'))
       ]);
       setAnnouncements(aSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setClasses(cSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setClasses(sortClasses(cSnap.docs.map(d => ({ id: d.id, ...d.data() }))));
     } catch (err) { console.error(err); }
     setLoading(false);
   }

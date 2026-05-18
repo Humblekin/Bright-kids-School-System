@@ -20,6 +20,7 @@ const adminNav = [
     { to: '/admin/reports', icon: <FiClipboard />, label: 'Report Cards' },
     { to: '/admin/fees', icon: <FiDollarSign />, label: 'Manage Fees' },
     { to: '/admin/sms', icon: <FiMessageSquare />, label: 'Send SMS' },
+    { to: '/admin/expenses', icon: <FiDollarSign />, label: 'Expenses' },
   ]},
   { section: 'System', items: [
     { to: '/admin/settings', icon: <FiSettings />, label: 'School Settings' },

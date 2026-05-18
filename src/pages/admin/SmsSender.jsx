@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { collection, getDocs } from 'firebase/firestore';
 import { FiMessageSquare, FiSend, FiCheck } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sortClasses } from '../../utils/sanitize';
 
 export default function SmsSender() {
   const [classes, setClasses] = useState([]);
@@ -21,7 +22,7 @@ export default function SmsSender() {
           getDocs(collection(db, 'classes')),
           getDocs(collection(db, 'students'))
         ]);
-        setClasses(cSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setClasses(sortClasses(cSnap.docs.map(d => ({ id: d.id, ...d.data() }))));
         setStudents(stSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (err) { console.error(err); }
       setLoading(false);

@@ -3,7 +3,7 @@ import { db } from '../../firebase';
 import { collection, getDocs, updateDoc, deleteDoc, doc, addDoc } from 'firebase/firestore';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch } from 'react-icons/fi';
 import Layout from '../../components/Layout';
-import { sanitize } from '../../utils/sanitize';
+import { sanitize, sortClasses } from '../../utils/sanitize';
 
 export default function ManageStudents() {
   const [students, setStudents] = useState([]);
@@ -27,7 +27,7 @@ export default function ManageStudents() {
         getDocs(collection(db, 'classes'))
       ]);
       setStudents(studSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      setClasses(classSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setClasses(sortClasses(classSnap.docs.map(d => ({ id: d.id, ...d.data() }))));
     } catch (err) { console.error(err); }
     setLoading(false);
   }

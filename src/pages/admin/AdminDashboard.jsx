@@ -1,31 +1,34 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
-import { FiUsers, FiUser, FiLayers, FiBook, FiBell, FiTrendingUp, FiDollarSign } from 'react-icons/fi';
+import { FiUsers, FiUser, FiLayers, FiBook, FiBell, FiTrendingUp, FiDollarSign, FiTrendingDown } from 'react-icons/fi';
 import Layout from '../../components/Layout';
 
 export default function AdminDashboard() {
-  const [stats, setStats] = useState({ students: 0, teachers: 0, classes: 0, subjects: 0, revenue: 0 });
+  const [stats, setStats] = useState({ students: 0, teachers: 0, classes: 0, subjects: 0, revenue: 0, expenses: 0 });
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        const [studentsSnap, teachersSnap, classesSnap, subjectsSnap, feesSnap] = await Promise.all([
+        const [studentsSnap, teachersSnap, classesSnap, subjectsSnap, feesSnap, expensesSnap] = await Promise.all([
           getDocs(collection(db, 'students')),
           getDocs(collection(db, 'teachers')),
           getDocs(collection(db, 'classes')),
           getDocs(collection(db, 'subjects')),
           getDocs(collection(db, 'fees')),
+          getDocs(collection(db, 'expenses')),
         ]);
         const totalRevenue = feesSnap.docs.reduce((sum, d) => sum + (d.data().amount || 0), 0);
+        const totalExpenses = expensesSnap.docs.reduce((sum, d) => sum + (d.data().amount || 0), 0);
         setStats({
           students: studentsSnap.size,
           teachers: teachersSnap.size,
           classes: classesSnap.size,
           subjects: subjectsSnap.size,
           revenue: totalRevenue,
+          expenses: totalExpenses,
         });
 
         const annSnap = await getDocs(query(collection(db, 'announcements'), orderBy('date', 'desc'), limit(5)));
@@ -67,8 +70,15 @@ export default function AdminDashboard() {
         </div>
         <div className="stat-card">
           <div className="stat-card-icon red"><FiDollarSign /></div>
-          <div className="stat-card-value">₵{stats.revenue.toFixed(2)}</div>
-          <div className="stat-card-label">Total Revenue</div>
+          <div className="stat-card-value" style={{ color: (stats.revenue - stats.expenses) >= 0 ? 'var(--accent-green)' : 'var(--accent-red)' }}>
+            ₵{(stats.revenue - stats.expenses).toFixed(2)}
+          </div>
+          <div className="stat-card-label">Revenue (After Expenses)</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-card-icon" style={{ background: 'var(--accent-orange-light)', color: 'var(--accent-orange)' }}><FiTrendingDown /></div>
+          <div className="stat-card-value" style={{ color: 'var(--accent-orange)' }}>₵{stats.expenses.toFixed(2)}</div>
+          <div className="stat-card-label">Total Expenses</div>
         </div>
       </div>
 

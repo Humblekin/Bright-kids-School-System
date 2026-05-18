@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import Layout from '../../components/Layout';
+import { sortClasses } from '../../utils/sanitize';
 import { FiCalendar, FiCheck, FiX, FiClock, FiUser } from 'react-icons/fi';
 
 const statusColors = {
@@ -26,7 +27,7 @@ export default function AttendanceHistory() {
           getDocs(collection(db, 'classes')),
           getDocs(collection(db, 'students'))
         ]);
-        setClasses(cSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setClasses(sortClasses(cSnap.docs.map(d => ({ id: d.id, ...d.data() }))));
         setStudents(sSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (err) { console.error(err); }
       setLoading(false);

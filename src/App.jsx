@@ -17,6 +17,7 @@ import ManageFees from './pages/admin/ManageFees';
 import SchoolSettings from './pages/admin/SchoolSettings';
 import SmsSender from './pages/admin/SmsSender';
 import ReportCards from './pages/admin/ReportCards';
+import ManageExpenses from './pages/admin/ManageExpenses';
 
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import TakeAttendance from './pages/teacher/TakeAttendance';
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/admin/reports" element={<ProtectedRoute allowedRoles={['admin']}><ReportCards /></ProtectedRoute>} />
           <Route path="/admin/fees" element={<ProtectedRoute allowedRoles={['admin']}><ManageFees /></ProtectedRoute>} />
           <Route path="/admin/sms" element={<ProtectedRoute allowedRoles={['admin']}><SmsSender /></ProtectedRoute>} />
+          <Route path="/admin/expenses" element={<ProtectedRoute allowedRoles={['admin']}><ManageExpenses /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><SchoolSettings /></ProtectedRoute>} />
           <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={['admin']}><Profile /></ProtectedRoute>} />
 

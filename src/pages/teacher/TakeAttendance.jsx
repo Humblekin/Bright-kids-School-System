@@ -4,6 +4,7 @@ import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../../contexts/AuthContext';
 import { FiCheck, FiSave } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sortClasses } from '../../utils/sanitize';
 
 export default function TakeAttendance() {
   const { userData } = useAuth();
@@ -37,7 +38,7 @@ export default function TakeAttendance() {
           console.warn('Teacher has assigned class IDs but no matching classes found. Showing all classes.');
           myClasses = allClasses;
         }
-        setClasses(myClasses);
+        setClasses(sortClasses(myClasses));
         setStudents(allStudents);
       } catch (err) { console.error(err); }
       setLoading(false);

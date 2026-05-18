@@ -4,6 +4,7 @@ import { collection, getDocs, doc, setDoc, query, where } from 'firebase/firesto
 import { useAuth } from '../../contexts/AuthContext';
 import { FiSave, FiCheck } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sortClasses } from '../../utils/sanitize';
 
 export default function EnterResults() {
   const { userData } = useAuth();
@@ -48,10 +49,10 @@ export default function EnterResults() {
             console.warn('Teacher has assigned subject IDs but no matching subjects found. Showing all subjects.');
             mySubjects = allSubjects;
           }
-          setClasses(myClasses);
+          setClasses(sortClasses(myClasses));
           setSubjects(mySubjects);
         } else {
-          setClasses(allClasses);
+          setClasses(sortClasses(allClasses));
           setSubjects(allSubjects);
         }
         setStudents(allStudents);

@@ -3,6 +3,7 @@ import { db } from '../../firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { FiPrinter } from 'react-icons/fi';
 import Layout from '../../components/Layout';
+import { sortClasses } from '../../utils/sanitize';
 
 export default function ReportCards() {
   const [classes, setClasses] = useState([]);
@@ -25,7 +26,7 @@ export default function ReportCards() {
           getDocs(collection(db, 'results')),
           getDoc(doc(db, 'settings', 'school'))
         ]);
-        setClasses(cSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setClasses(sortClasses(cSnap.docs.map(d => ({ id: d.id, ...d.data() }))));
         setSubjects(sSnap.docs.map(d => ({ id: d.id, ...d.data() })));
         setStudents(stSnap.docs.map(d => ({ id: d.id, ...d.data() })));
         setAllResults(rSnap.docs.map(d => ({ id: d.id, ...d.data() })));
