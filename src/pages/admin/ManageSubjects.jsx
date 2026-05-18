@@ -31,8 +31,10 @@ export default function ManageSubjects() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const name = sanitize(form.name);
+    if (!name) return;
     try {
-      await addDoc(collection(db, 'subjects'), { name: sanitize(form.name) });
+      await addDoc(collection(db, 'subjects'), { name });
       setShowModal(false);
       setForm({ name: '' });
       fetchData();

@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Profile from './pages/shared/Profile';
 import Announcements from './pages/shared/Announcements';
 import EnterResults from './pages/shared/EnterResults';
+import AttendanceHistory from './pages/shared/AttendanceHistory';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ManageStudents from './pages/admin/ManageStudents';
@@ -31,6 +32,7 @@ export default function App() {
           {/* Admin Routes */}
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
           <Route path="/admin/students" element={<ProtectedRoute allowedRoles={['admin']}><ManageStudents /></ProtectedRoute>} />
+          <Route path="/admin/attendance" element={<ProtectedRoute allowedRoles={['admin']}><AttendanceHistory /></ProtectedRoute>} />
           <Route path="/admin/teachers" element={<ProtectedRoute allowedRoles={['admin']}><ManageTeachers /></ProtectedRoute>} />
           <Route path="/admin/classes" element={<ProtectedRoute allowedRoles={['admin']}><ManageClasses /></ProtectedRoute>} />
           <Route path="/admin/subjects" element={<ProtectedRoute allowedRoles={['admin']}><ManageSubjects /></ProtectedRoute>} />
@@ -45,6 +47,7 @@ export default function App() {
           {/* Teacher Routes */}
           <Route path="/teacher" element={<ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
           <Route path="/teacher/attendance" element={<ProtectedRoute allowedRoles={['teacher']}><TakeAttendance /></ProtectedRoute>} />
+          <Route path="/teacher/attendance-history" element={<ProtectedRoute allowedRoles={['teacher']}><AttendanceHistory /></ProtectedRoute>} />
           <Route path="/teacher/results" element={<ProtectedRoute allowedRoles={['teacher']}><EnterResults /></ProtectedRoute>} />
           <Route path="/teacher/announcements" element={<ProtectedRoute allowedRoles={['teacher']}><Announcements /></ProtectedRoute>} />
           <Route path="/teacher/profile" element={<ProtectedRoute allowedRoles={['teacher']}><Profile /></ProtectedRoute>} />

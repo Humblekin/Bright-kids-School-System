@@ -1,6 +1,6 @@
 export function sanitize(str) {
   if (typeof str !== 'string') return '';
-  return str
+  return str.trim()
     .replace(/[<>&"']/g, (char) => ({
       '<': '&lt;',
       '>': '&gt;',
@@ -10,10 +10,6 @@ export function sanitize(str) {
     }[char]));
 }
 
-export function sanitizeObject(obj) {
-  const result = {};
-  for (const [key, value] of Object.entries(obj)) {
-    result[key] = typeof value === 'string' ? sanitize(value) : value;
-  }
-  return result;
+export function isValid(str) {
+  return typeof str === 'string' && str.trim().length > 0;
 }

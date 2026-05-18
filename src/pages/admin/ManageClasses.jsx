@@ -43,8 +43,10 @@ export default function ManageClasses() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const name = sanitize(form.name);
+    if (!name) return;
     try {
-      const data = { name: sanitize(form.name), subjects: form.subjects };
+      const data = { name, subjects: form.subjects };
       if (editing) { await updateDoc(doc(db, 'classes', editing.id), data); }
       else { await addDoc(collection(db, 'classes'), data); }
       setShowModal(false); fetchData();

@@ -30,10 +30,13 @@ export default function Announcements({ readOnly = false }) {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const title = sanitize(form.title);
+    const message = sanitize(form.message);
+    if (!title || !message) return;
     try {
       await addDoc(collection(db, 'announcements'), {
-        title: sanitize(form.title),
-        message: sanitize(form.message),
+        title,
+        message,
         target: form.target,
         date: new Date().toISOString().split('T')[0],
         author: userData?.name || 'Unknown',
@@ -70,24 +73,24 @@ export default function Announcements({ readOnly = false }) {
         </div></div>
       ) : (
         announcements.map(a => (
-          <div className="content-card" key={a.id}>
-            <div className="content-card-header">
+          <div className="announcement-card-modern" key={a.id}>
+            <div className="announcement-header-modern">
               <div>
-                <h3>{a.title}</h3>
-                <div style={{ display: 'flex', gap: 8, marginTop: 4, alignItems: 'center' }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.date}</span>
-                  <span className="badge badge-teacher">{a.author || 'Admin'}</span>
-                  {a.target && a.target !== 'all' && <span className="badge badge-student">{getClassName(a.target)}</span>}
-                  {a.target === 'all' && <span className="badge badge-present">All</span>}
+                <h3 className="announcement-title-modern" style={{ fontSize: 18, marginBottom: 4 }}>{a.title}</h3>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span className="announcement-date-modern">{a.date}</span>
+                  <span className="badge badge-teacher">✍️ {a.author || 'Admin'}</span>
+                  {a.target && a.target !== 'all' && <span className="badge badge-student">🎯 {getClassName(a.target)}</span>}
+                  {a.target === 'all' && <span className="badge badge-present">🎯 All Classes</span>}
                 </div>
               </div>
               {canPost && !readOnly && (
-                <button className="btn btn-icon btn-sm" style={{ color: 'var(--accent-red)' }} onClick={() => handleDelete(a.id)}><FiTrash2 /></button>
+                <button className="btn btn-icon btn-sm" style={{ color: 'var(--accent-red)', padding: 6 }} onClick={() => handleDelete(a.id)}><FiTrash2 /></button>
               )}
             </div>
-            <div className="content-card-body">
-              <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.7 }}>{a.message}</p>
-            </div>
+            <p className="announcement-body-modern" style={{ fontSize: 15, marginTop: 8 }}>
+              {a.message}
+            </p>
           </div>
         ))
       )}

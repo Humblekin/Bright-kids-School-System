@@ -59,10 +59,12 @@ export default function ManageStudents() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const name = sanitize(form.name);
+    if (!name) { setError('Name is required.'); return; }
     setSaving(true);
     setError('');
     try {
-      const data = { name: sanitize(form.name), classId: form.classId, studentId: form.studentId, parentContact: sanitize(form.parentContact), gender: form.gender, dob: form.dob };
+      const data = { name, classId: form.classId, studentId: form.studentId, parentContact: sanitize(form.parentContact), gender: form.gender, dob: form.dob };
       if (editingStudent) {
         await updateDoc(doc(db, 'students', editingStudent.id), data);
       } else {

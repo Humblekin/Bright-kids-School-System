@@ -85,14 +85,16 @@ export default function AdminDashboard() {
             </div>
           ) : (
             announcements.map(a => (
-              <div key={a.id} style={{ padding: '14px 0', borderBottom: '1px solid var(--border-light)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                  <strong style={{ fontSize: 14 }}>{a.title}</strong>
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{a.date}</span>
+              <div key={a.id} className="announcement-card-modern">
+                <div className="announcement-header-modern">
+                  <div className="announcement-title-modern">{a.title}</div>
+                  <span className="announcement-date-modern">{a.date}</span>
                 </div>
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{a.message}</p>
+                <p className="announcement-body-modern">{a.message}</p>
                 {a.target && a.target !== 'all' && (
-                  <span className="badge badge-teacher" style={{ marginTop: 6 }}>{a.target}</span>
+                  <div className="announcement-footer-modern">
+                    <span className="badge badge-teacher">{a.target}</span>
+                  </div>
                 )}
               </div>
             ))

@@ -57,10 +57,11 @@ export default function ManageTeachers() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const name = sanitize(form.name);
+    if (!name) { setError('Name is required.'); return; }
     setSaving(true);
     setError('');
     try {
-      const name = sanitize(form.name);
       if (editing) { 
         await updateDoc(doc(db, 'teachers', editing.id), {
           name,

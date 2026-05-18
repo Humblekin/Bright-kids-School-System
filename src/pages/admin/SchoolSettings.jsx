@@ -49,11 +49,14 @@ export default function SchoolSettings() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    const schoolName = sanitize(form.schoolName);
+    const academicYear = sanitize(form.academicYear);
+    if (!schoolName || !academicYear) { setToast({ type: 'error', message: 'School name and academic year are required.' }); return; }
     setSaving(true);
     try {
       await setDoc(doc(db, 'settings', 'school'), {
-        schoolName: sanitize(form.schoolName),
-        academicYear: sanitize(form.academicYear),
+        schoolName,
+        academicYear,
         badgeUrl: badgeUrl && (badgeUrl.startsWith('data:image/') || badgeUrl.startsWith('https://')) ? badgeUrl : '',
       });
       setToast({ type: 'success', message: 'Settings saved successfully' });

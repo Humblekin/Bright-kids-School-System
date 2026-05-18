@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { FiHome, FiUsers, FiBook, FiCalendar, FiClipboard, FiLayers, FiBell, FiUser, FiLogOut, FiMenu, FiX, FiAward, FiMessageSquare, FiDollarSign, FiSettings } from 'react-icons/fi';
+import { FiHome, FiUsers, FiBook, FiCalendar, FiClipboard, FiLayers, FiBell, FiUser, FiLogOut, FiMenu, FiX, FiAward, FiMessageSquare, FiDollarSign, FiSettings, FiClock } from 'react-icons/fi';
 
 const adminNav = [
   { section: 'Main', items: [
@@ -15,6 +15,7 @@ const adminNav = [
   ]},
   { section: 'Activities', items: [
     { to: '/admin/results', icon: <FiAward />, label: 'Results' },
+    { to: '/admin/attendance', icon: <FiCalendar />, label: 'Attendance History' },
     { to: '/admin/announcements', icon: <FiBell />, label: 'Announcements' },
     { to: '/admin/reports', icon: <FiClipboard />, label: 'Report Cards' },
     { to: '/admin/fees', icon: <FiDollarSign />, label: 'Manage Fees' },
@@ -30,7 +31,8 @@ const teacherNav = [
     { to: '/teacher', icon: <FiHome />, label: 'Dashboard' },
   ]},
   { section: 'Activities', items: [
-    { to: '/teacher/attendance', icon: <FiCalendar />, label: 'Attendance' },
+    { to: '/teacher/attendance', icon: <FiCalendar />, label: 'Take Attendance' },
+    { to: '/teacher/attendance-history', icon: <FiClock />, label: 'Attendance History' },
     { to: '/teacher/results', icon: <FiClipboard />, label: 'Results' },
     { to: '/teacher/announcements', icon: <FiBell />, label: 'Announcements' },
   ]},

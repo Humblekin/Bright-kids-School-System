@@ -61,6 +61,8 @@ export default function ManageFees() {
   const handlePayment = async (e) => {
     e.preventDefault();
     if (!paymentForm.amount || parseFloat(paymentForm.amount) <= 0) return;
+    const feeSubType = feeTypeFilter === 'other' ? sanitize(otherFeeLabel) : '';
+    if (feeTypeFilter === 'other' && !feeSubType) { setToast({ type: 'error', message: 'Please enter the custom fee name.' }); return; }
     setSaving(true);
     try {
       await addDoc(collection(db, 'fees'), {
@@ -68,7 +70,7 @@ export default function ManageFees() {
         studentName: selectedStudent.name,
         classId: selectedStudent.classId,
         feeType: feeTypeFilter,
-        feeSubType: feeTypeFilter === 'other' ? sanitize(otherFeeLabel) : '',
+        feeSubType,
         term: paymentForm.term,
         amount: parseFloat(paymentForm.amount),
         date: paymentForm.date,
