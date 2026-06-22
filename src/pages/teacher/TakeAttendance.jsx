@@ -28,14 +28,9 @@ export default function TakeAttendance() {
         const teachers = tSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         const allClasses = cSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         const allStudents = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        console.log('TakeAttendance | userData:', JSON.stringify(userData));
-        console.log('TakeAttendance | teachers:', JSON.stringify(teachers.map(t => ({ id: t.id, name: t.name, classes: t.classes }))));
-        console.log('TakeAttendance | allClasses:', JSON.stringify(allClasses.map(c => ({ id: c.id, name: c.name }))));
         const me = teachers.find(t => t.id === userData?.uid || t.name === userData?.name);
-        console.log('TakeAttendance | matched teacher:', me ? JSON.stringify({ id: me.id, name: me.name, classes: me.classes }) : 'NOT FOUND');
         let myClasses = me ? allClasses.filter(c => (me.classes || []).includes(c.id)) : allClasses;
         if (me && (me.classes || []).length > 0 && myClasses.length === 0) {
-          console.warn('Teacher has assigned class IDs but no matching classes found. Showing all classes.');
           myClasses = allClasses;
         }
         setClasses(sortClasses(myClasses));

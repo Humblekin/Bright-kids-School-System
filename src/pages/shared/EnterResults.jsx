@@ -34,19 +34,13 @@ export default function EnterResults() {
 
         if (userData?.role === 'teacher') {
           const teachers = tSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-          console.log('EnterResults | userData:', JSON.stringify(userData));
-          console.log('EnterResults | teachers:', JSON.stringify(teachers.map(t => ({ id: t.id, name: t.name, classes: t.classes, subjects: t.subjects }))));
-          console.log('EnterResults | allClasses:', JSON.stringify(allClasses.map(c => ({ id: c.id, name: c.name }))));
           const me = teachers.find(t => t.id === userData?.uid || t.name === userData?.name);
-          console.log('EnterResults | matched teacher:', me ? JSON.stringify({ id: me.id, name: me.name, classes: me.classes }) : 'NOT FOUND');
           let myClasses = me ? allClasses.filter(c => (me.classes || []).includes(c.id)) : allClasses;
           let mySubjects = me ? allSubjects.filter(s => (me.subjects || []).includes(s.id)) : allSubjects;
           if (me && (me.classes || []).length > 0 && myClasses.length === 0) {
-            console.warn('Teacher has assigned class IDs but no matching classes found. Showing all classes.');
             myClasses = allClasses;
           }
           if (me && (me.subjects || []).length > 0 && mySubjects.length === 0) {
-            console.warn('Teacher has assigned subject IDs but no matching subjects found. Showing all subjects.');
             mySubjects = allSubjects;
           }
           setClasses(sortClasses(myClasses));

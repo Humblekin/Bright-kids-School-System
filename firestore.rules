@@ -60,6 +60,11 @@ service cloud.firestore {
       allow update: if false;
     }
 
+    match /expenses/{expenseId} {
+      allow read: if isAuth();
+      allow create, update, delete: if hasRole('admin');
+    }
+
     match /settings/{settingId} {
       allow read: if isAuth();
       allow write: if hasRole('admin');

@@ -75,6 +75,16 @@ export default function ManageTeachers() {
           setSaving(false);
           return;
         }
+        if (form.password.length < 8) {
+          setError('Password must be at least 8 characters.');
+          setSaving(false);
+          return;
+        }
+        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(form.password)) {
+          setError('Password must include uppercase, lowercase, and a number.');
+          setSaving(false);
+          return;
+        }
         
         const userCred = await createUserWithEmailAndPassword(secondaryAuth, form.email, form.password);
         const uid = userCred.user.uid;
@@ -101,8 +111,12 @@ export default function ManageTeachers() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this teacher? NOTE: This does not delete their login account from Authentication.')) return;
-    try { await deleteDoc(doc(db, 'teachers', id)); fetchData(); } catch (err) { console.error(err); }
+    if (!window.confirm('Delete this teacher? This will also remove their database records.')) return;
+    try {
+      await deleteDoc(doc(db, 'teachers', id));
+      await deleteDoc(doc(db, 'users', id));
+      fetchData();
+    } catch (err) { console.error(err); alert('Failed to delete teacher. Check console for details.'); }
   };
 
   const filtered = teachers.filter(t => t.name?.toLowerCase().includes(search.toLowerCase()));
@@ -169,7 +183,7 @@ export default function ManageTeachers() {
                     </div>
                     <div className="form-group">
                       <label className="form-label">Password</label>
-                      <input type="password" minLength="6" className="form-input" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required={!editing} />
+                      <input type="password" minLength="8" className="form-input" value={form.password} onChange={e => setForm({...form, password: e.target.value})} required={!editing} />
                     </div>
                   </div>
                 )}

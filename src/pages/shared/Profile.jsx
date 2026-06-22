@@ -16,8 +16,11 @@ export default function Profile() {
     if (password !== confirmPassword) {
       return setError('Passwords do not match');
     }
-    if (password.length < 6) {
-      return setError('Password must be at least 6 characters');
+    if (password.length < 8) {
+      return setError('Password must be at least 8 characters');
+    }
+    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+      return setError('Password must include uppercase, lowercase, and a number');
     }
 
     setLoading(true);
