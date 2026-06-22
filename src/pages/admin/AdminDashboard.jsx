@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 import { FiUsers, FiUser, FiLayers, FiBook, FiBell, FiTrendingUp, FiDollarSign, FiTrendingDown } from 'react-icons/fi';
 import Layout from '../../components/Layout';
 
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({ students: 0, teachers: 0, classes: 0, subjects: 0, revenue: 0, expenses: 0 });
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -132,6 +134,16 @@ export default function AdminDashboard() {
               <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
               <div style={{ fontSize: 13, fontWeight: 600 }}>Result Processing</div>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Enter & manage exam results</p>
+            </div>
+            <div
+              style={{ padding: 20, background: 'rgba(34, 197, 94, 0.08)', borderRadius: 'var(--radius)', textAlign: 'center', cursor: 'pointer', border: '2px solid var(--accent-green)', transition: 'transform 0.2s' }}
+              onClick={() => navigate('/admin/fees')}
+              onMouseOver={e => e.currentTarget.style.transform = 'scale(1.03)'}
+              onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+            >
+              <div style={{ fontSize: 32, marginBottom: 8 }}>💰</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>Manage Fees</div>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Track payments & fee records</p>
             </div>
           </div>
         </div>
