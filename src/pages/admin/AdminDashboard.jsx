@@ -22,8 +22,13 @@ export default function AdminDashboard() {
           getDocs(collection(db, 'fees')),
           getDocs(collection(db, 'expenses')),
         ]);
-        const totalRevenue = feesSnap.docs.reduce((sum, d) => sum + (d.data().amount || 0), 0);
-        const totalExpenses = expensesSnap.docs.reduce((sum, d) => sum + (d.data().amount || 0), 0);
+        const existingStudentIds = new Set(studentsSnap.docs.map(d => d.id));
+        const totalRevenue = feesSnap.docs.reduce((sum, d) => {
+          if (d.data().voided) return sum;
+          if (!existingStudentIds.has(d.data().studentId)) return sum;
+          return sum + (d.data().amount || 0);
+        }, 0);
+        const totalExpenses = expensesSnap.docs.reduce((sum, d) => sum + (d.data().voided ? 0 : (d.data().amount || 0)), 0);
         setStats({
           students: studentsSnap.size,
           teachers: teachersSnap.size,

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
-import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
-import { FiDollarSign, FiPlus, FiSearch, FiCheck, FiX, FiSettings, FiActivity, FiUser, FiCalendar, FiArrowRight, FiTrash2 } from 'react-icons/fi';
+import { collection, getDocs, addDoc, query, orderBy, serverTimestamp, doc, getDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { FiDollarSign, FiPlus, FiSearch, FiCheck, FiX, FiSettings, FiActivity, FiUser, FiCalendar, FiArrowRight, FiTrash2, FiEye, FiEyeOff } from 'react-icons/fi';
 import Layout from '../../components/Layout';
 import { sanitize, sortClasses } from '../../utils/sanitize';
+import { useAuth } from '../../contexts/AuthContext';
 
 const ACADEMIC_MONTHS = [
   { name: 'January', index: 1 },
@@ -35,6 +36,7 @@ const isMonthDue = (monthName) => {
 };
 
 export default function ManageFees() {
+  const { userData } = useAuth();
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -48,13 +50,18 @@ export default function ManageFees() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('');
-  const [feeTypeFilter, setFeeTypeFilter] = useState('school'); // 'school', 'feeding', 'other'
+  const [feeTypeFilter, setFeeTypeFilter] = useState('school');
+  const [showVoided, setShowVoided] = useState(false);
   
   const [showModal, setShowModal] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+  
+  const [voidTarget, setVoidTarget] = useState(null);
+  const [voidReason, setVoidReason] = useState('');
+  const [showVoidModal, setShowVoidModal] = useState(false);
   
   const [otherFeeLabel, setOtherFeeLabel] = useState('');
   const [paymentForm, setPaymentForm] = useState({ amount: '', date: new Date().toISOString().split('T')[0], note: '', paymentMethod: 'Cash' });
@@ -174,7 +181,7 @@ export default function ManageFees() {
   };
 
   const getStudentLedger = (student, type) => {
-    const allStudentPayments = payments.filter(p => p.studentId === student.id && p.feeType === type);
+    const allStudentPayments = payments.filter(p => p.studentId === student.id && p.feeType === type && !p.voided);
     const monthlyRate = getMonthlyRate(student, type);
 
     const ledger = ACADEMIC_MONTHS.map(month => {
@@ -282,14 +289,43 @@ export default function ManageFees() {
     setSaving(false);
   };
 
-  const handleDeletePayment = async (paymentId, amount, studentName) => {
-    if (!window.confirm(`Are you sure you want to delete this payment of ₵${amount.toFixed(2)} for ${studentName}? This action cannot be undone.`)) {
+  const openVoidModal = (paymentId, amount, studentName) => {
+    setVoidTarget({ paymentId, amount, studentName });
+    setVoidReason('');
+    setShowVoidModal(true);
+  };
+
+  const handleVoidPayment = async () => {
+    if (!voidTarget) return;
+    if (!voidReason.trim()) {
+      showToastMsg('error', 'Please provide a reason for voiding this payment.');
       return;
     }
     setSaving(true);
     try {
+      await updateDoc(doc(db, 'fees', voidTarget.paymentId), {
+        voided: true,
+        voidedAt: serverTimestamp(),
+        voidedBy: userData?.name || 'Unknown',
+        voidReason: sanitize(voidReason.trim()),
+      });
+      setShowVoidModal(false);
+      setVoidTarget(null);
+      showToastMsg('success', 'Payment voided successfully. Audit trail preserved.');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      showToastMsg('error', err.message);
+    }
+    setSaving(false);
+  };
+
+  const handlePermanentDelete = async (paymentId, amount, studentName) => {
+    if (!window.confirm(`Permanently delete payment of ₵${amount.toFixed(2)} for ${studentName}? This CANNOT be undone.`)) return;
+    setSaving(true);
+    try {
       await deleteDoc(doc(db, 'fees', paymentId));
-      showToastMsg('success', 'Payment deleted successfully!');
+      showToastMsg('success', 'Payment permanently deleted.');
       fetchData();
     } catch (err) {
       console.error(err);
@@ -309,7 +345,7 @@ export default function ManageFees() {
 
   // Calculate high level KPIs
   const totalStudents = students.length;
-  const totalCollected = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const totalCollected = payments.filter(p => !p.voided).reduce((sum, p) => sum + (p.amount || 0), 0);
   const totalUnpaid = students.reduce((sum, s) => {
     if (feeTypeFilter === 'other') return sum;
     const info = getStudentLedger(s, feeTypeFilter);
@@ -493,7 +529,7 @@ export default function ManageFees() {
                   const rate = getMonthlyRate(s, feeTypeFilter);
                   const info = feeTypeFilter !== 'other' ? getStudentLedger(s, feeTypeFilter) : null;
                   
-                  const otherPayments = feeTypeFilter === 'other' ? payments.filter(p => p.studentId === s.id && p.feeType === 'other') : [];
+                  const otherPayments = feeTypeFilter === 'other' ? payments.filter(p => p.studentId === s.id && p.feeType === 'other' && !p.voided) : [];
                   const otherPaid = otherPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
 
                   return (
@@ -685,7 +721,7 @@ export default function ManageFees() {
                 </>
               );
             })() : (() => {
-              const otherPayments = payments.filter(p => p.studentId === selectedStudent.id && p.feeType === 'other');
+              const otherPayments = payments.filter(p => p.studentId === selectedStudent.id && p.feeType === 'other' && !p.voided);
               const otherPaid = otherPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
               return (
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: 'var(--bg)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: 20 }}>
@@ -696,8 +732,17 @@ export default function ManageFees() {
             })()}
 
             {/* General Ledger Ledger Transactions logs */}
-            <h4 style={{ marginBottom: 12, color: 'var(--text)' }}><FiActivity /> Payment Transactions History</h4>
-            {payments.filter(p => p.studentId === selectedStudent.id && p.feeType === feeTypeFilter).length === 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h4 style={{ color: 'var(--text)' }}><FiActivity /> Payment Transactions History</h4>
+              <button
+                className="btn btn-sm btn-secondary"
+                onClick={() => setShowVoided(!showVoided)}
+                style={{ fontSize: 12, padding: '4px 12px' }}
+              >
+                {showVoided ? <><FiEyeOff /> Hide Voided</> : <><FiEye /> Show Voided</>}
+              </button>
+            </div>
+            {payments.filter(p => p.studentId === selectedStudent.id && p.feeType === feeTypeFilter && (!p.voided || showVoided)).length === 0 ? (
               <div className="empty-state" style={{ padding: 24 }}>
                 <div className="empty-state-icon">📋</div>
                 <h3>No Payments Stored</h3>
@@ -709,28 +754,50 @@ export default function ManageFees() {
                   <tr><th>Date Received</th><th>Payment Method</th><th>Amount Credited</th><th>Admin Memo Note</th><th style={{ textAlign: 'center' }}>Actions</th></tr>
                 </thead>
                 <tbody>
-                  {payments.filter(p => p.studentId === selectedStudent.id && p.feeType === feeTypeFilter).map(p => (
-                    <tr key={p.id}>
-                      <td><strong style={{ color: 'var(--text)' }}>{p.date}</strong></td>
+                  {payments.filter(p => p.studentId === selectedStudent.id && p.feeType === feeTypeFilter && (!p.voided || showVoided)).map(p => (
+                    <tr key={p.id} style={p.voided ? { opacity: 0.5, background: 'var(--bg)' } : {}}>
                       <td>
-                        <span className={`badge badge-${p.feeType === 'school' ? 'admin' : p.feeType === 'feeding' ? 'student' : 'teacher'}`}>
+                        <strong style={{ color: 'var(--text)' }}>{p.date}</strong>
+                        {p.voided && <span className="badge badge-absent" style={{ marginLeft: 8, fontSize: 10 }}>VOIDED</span>}
+                      </td>
+                      <td>
+                        <span className={`badge badge-${p.feeType === 'school' ? 'admin' : p.feeType === 'feeding' ? 'student' : 'teacher'}`} style={p.voided ? { textDecoration: 'line-through' } : {}}>
                           {p.feeType === 'school' ? '🏫 School Fees' : p.feeType === 'feeding' ? '🍽️ Feeding Fees' : `➕ Other: ${p.feeSubType}`}
                         </span>
                         {p.paymentMethod && <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{p.paymentMethod}</div>}
                       </td>
-                      <td><strong style={{ color: 'var(--accent-green)' }}>₵{p.amount.toFixed(2)}</strong></td>
-                      <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{p.note || '—'}</td>
+                      <td><strong style={{ color: p.voided ? 'var(--text-muted)' : 'var(--accent-green)', textDecoration: p.voided ? 'line-through' : 'none' }}>₵{p.amount.toFixed(2)}</strong></td>
+                      <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+                        {p.note || '—'}
+                        {p.voided && <div style={{ fontSize: 11, color: 'var(--accent-red)', marginTop: 4 }}>Voided by {p.voidedBy}: {p.voidReason}</div>}
+                      </td>
                       <td style={{ textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          className="btn btn-icon btn-sm"
-                          style={{ color: 'var(--accent-red)', padding: 6 }}
-                          onClick={() => handleDeletePayment(p.id, p.amount, selectedStudent.name)}
-                          disabled={saving}
-                          title="Delete Payment Record"
-                        >
-                          <FiTrash2 />
-                        </button>
+                        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                          {!p.voided ? (
+                            <button
+                              type="button"
+                              className="btn btn-icon btn-sm"
+                              style={{ color: 'var(--accent-orange)', padding: 6 }}
+                              onClick={() => openVoidModal(p.id, p.amount, selectedStudent.name)}
+                              disabled={saving}
+                              title="Void (audit trail)"
+                            >
+                              <FiX />
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', padding: '0 4px' }}>Voided</span>
+                          )}
+                          <button
+                            type="button"
+                            className="btn btn-icon btn-sm"
+                            style={{ color: 'var(--accent-red)', padding: 6 }}
+                            onClick={() => handlePermanentDelete(p.id, p.amount, selectedStudent.name)}
+                            disabled={saving}
+                            title="Delete permanently"
+                          >
+                            <FiTrash2 />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -833,6 +900,42 @@ export default function ManageFees() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Void Payment Confirmation Modal */}
+      {showVoidModal && voidTarget && (
+        <div className="modal-overlay" onClick={() => setShowVoidModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Void Payment</h3>
+              <button className="modal-close" onClick={() => setShowVoidModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: 16, color: 'var(--text-secondary)', fontSize: 14 }}>
+                Voiding <strong>₵{voidTarget.amount.toFixed(2)}</strong> payment for <strong>{voidTarget.studentName}</strong>.
+                This will remove it from financial calculations while preserving the audit trail.
+              </p>
+              <div className="form-group">
+                <label className="form-label">Reason for Voiding *</label>
+                <textarea
+                  className="form-input"
+                  rows={3}
+                  placeholder="e.g. Incorrect amount, duplicate entry, refund issued..."
+                  value={voidReason}
+                  onChange={e => setVoidReason(e.target.value)}
+                  style={{ resize: 'vertical' }}
+                  required
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setShowVoidModal(false)} disabled={saving}>Cancel</button>
+              <button type="button" className="btn btn-danger" onClick={handleVoidPayment} disabled={saving || !voidReason.trim()}>
+                {saving ? 'Voiding...' : <><FiX /> Void Payment</>}
+              </button>
+            </div>
           </div>
         </div>
       )}

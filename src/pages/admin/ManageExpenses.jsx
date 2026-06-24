@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { FiDollarSign, FiPlus, FiSearch, FiEdit2, FiTrash2, FiCheck, FiX, FiTrendingDown, FiTrendingUp, FiPieChart, FiCalendar } from 'react-icons/fi';
+import { FiDollarSign, FiPlus, FiSearch, FiEdit2, FiTrash2, FiCheck, FiX, FiTrendingDown, FiTrendingUp, FiPieChart, FiCalendar, FiEye, FiEyeOff } from 'react-icons/fi';
 import Layout from '../../components/Layout';
 import { sanitize } from '../../utils/sanitize';
+import { useAuth } from '../../contexts/AuthContext';
 
 const EXPENSE_CATEGORIES = [
   'Salaries',
@@ -18,17 +19,23 @@ const EXPENSE_CATEGORIES = [
 ];
 
 export default function ManageExpenses() {
+  const { userData } = useAuth();
   const [expenses, setExpenses] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [dateRange, setDateRange] = useState({ from: '', to: '' });
+  const [showVoided, setShowVoided] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
   const [editingExpense, setEditingExpense] = useState(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
+
+  const [voidTarget, setVoidTarget] = useState(null);
+  const [voidReason, setVoidReason] = useState('');
+  const [showVoidModal, setShowVoidModal] = useState(false);
 
   const [form, setForm] = useState({
     category: '',
@@ -74,6 +81,7 @@ export default function ManageExpenses() {
   };
 
   const openEdit = (expense) => {
+    if (expense.voided) { showToastMsg('error', 'Cannot edit a voided expense.'); return; }
     setEditingExpense(expense);
     setForm({
       category: expense.category || '',
@@ -116,11 +124,28 @@ export default function ManageExpenses() {
     setSaving(false);
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this expense? This action cannot be undone.')) return;
+  const openVoidModal = (expense) => {
+    setVoidTarget(expense);
+    setVoidReason('');
+    setShowVoidModal(true);
+  };
+
+  const handleVoidExpense = async () => {
+    if (!voidTarget) return;
+    if (!voidReason.trim()) {
+      showToastMsg('error', 'Please provide a reason for voiding this expense.');
+      return;
+    }
     try {
-      await deleteDoc(doc(db, 'expenses', id));
-      showToastMsg('success', 'Expense deleted successfully!');
+      await updateDoc(doc(db, 'expenses', voidTarget.id), {
+        voided: true,
+        voidedAt: serverTimestamp(),
+        voidedBy: userData?.name || 'Unknown',
+        voidReason: sanitize(voidReason.trim()),
+      });
+      setShowVoidModal(false);
+      setVoidTarget(null);
+      showToastMsg('success', 'Expense voided successfully. Audit trail preserved.');
       fetchData();
     } catch (err) {
       console.error(err);
@@ -128,19 +153,32 @@ export default function ManageExpenses() {
     }
   };
 
-  const totalRevenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
-  const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  const handlePermanentDelete = async (id, amount, category) => {
+    if (!window.confirm(`Permanently delete expense of -₵${amount?.toFixed(2)} (${category})? This CANNOT be undone.`)) return;
+    try {
+      await deleteDoc(doc(db, 'expenses', id));
+      showToastMsg('success', 'Expense permanently deleted.');
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      showToastMsg('error', err.message);
+    }
+  };
+
+  const totalRevenue = payments.filter(p => !p.voided).reduce((sum, p) => sum + (p.amount || 0), 0);
+  const totalExpenses = expenses.filter(e => !e.voided).reduce((sum, e) => sum + (e.amount || 0), 0);
   const netProfit = totalRevenue - totalExpenses;
   const profitMargin = totalRevenue > 0 ? ((netProfit / totalRevenue) * 100) : 0;
 
   const categoryTotals = {};
-  expenses.forEach(e => {
+  expenses.filter(e => !e.voided).forEach(e => {
     const cat = e.category || 'Miscellaneous';
     categoryTotals[cat] = (categoryTotals[cat] || 0) + (e.amount || 0);
   });
   const topCategory = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
 
   const filtered = expenses.filter(e => {
+    if (!showVoided && e.voided) return false;
     const matchSearch = !search || e.category?.toLowerCase().includes(search.toLowerCase()) || e.description?.toLowerCase().includes(search.toLowerCase());
     const matchCategory = !categoryFilter || e.category === categoryFilter;
     const matchDate = (!dateRange.from || e.date >= dateRange.from) && (!dateRange.to || e.date <= dateRange.to);
@@ -220,6 +258,13 @@ export default function ManageExpenses() {
       <div className="content-card">
         <div className="content-card-header">
           <h3><FiDollarSign style={{ marginRight: 8 }} /> All Expenses ({filtered.length})</h3>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => setShowVoided(!showVoided)}
+            style={{ fontSize: 12, padding: '4px 12px' }}
+          >
+            {showVoided ? <><FiEyeOff /> Hide Voided</> : <><FiEye /> Show Voided</>}
+          </button>
         </div>
         <div className="content-card-body" style={{ overflowX: 'auto' }}>
           {filtered.length === 0 ? (
@@ -242,16 +287,35 @@ export default function ManageExpenses() {
               </thead>
               <tbody>
                 {filtered.map(e => (
-                  <tr key={e.id}>
-                    <td><strong style={{ color: 'var(--text)' }}>{e.date}</strong></td>
-                    <td><span className="badge badge-admin">{e.category}</span></td>
-                    <td style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{e.description || '—'}</td>
-                    <td>{e.paymentMethod || 'Cash'}</td>
-                    <td><strong style={{ color: 'var(--accent-red)' }}>-₵{e.amount?.toFixed(2)}</strong></td>
+                  <tr key={e.id} style={e.voided ? { opacity: 0.5, background: 'var(--bg)' } : {}}>
                     <td>
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button className="btn btn-icon btn-sm" onClick={() => openEdit(e)}><FiEdit2 /></button>
-                        <button className="btn btn-icon btn-sm" style={{ color: 'var(--accent-red)' }} onClick={() => handleDelete(e.id)}><FiTrash2 /></button>
+                      <strong style={{ color: 'var(--text)' }}>{e.date}</strong>
+                      {e.voided && <span className="badge badge-absent" style={{ marginLeft: 8, fontSize: 10 }}>VOIDED</span>}
+                    </td>
+                    <td>
+                      <span className="badge badge-admin" style={e.voided ? { textDecoration: 'line-through' } : {}}>{e.category}</span>
+                    </td>
+                    <td style={{ maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {e.description || '—'}
+                      {e.voided && <div style={{ fontSize: 11, color: 'var(--accent-red)', marginTop: 4 }}>Voided by {e.voidedBy}: {e.voidReason}</div>}
+                    </td>
+                    <td style={e.voided ? { textDecoration: 'line-through' } : {}}>{e.paymentMethod || 'Cash'}</td>
+                    <td>
+                      <strong style={{ color: e.voided ? 'var(--text-muted)' : 'var(--accent-red)', textDecoration: e.voided ? 'line-through' : 'none' }}>
+                        -₵{e.amount?.toFixed(2)}
+                      </strong>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+                        {!e.voided ? (
+                          <>
+                            <button className="btn btn-icon btn-sm" onClick={() => openEdit(e)} title="Edit"><FiEdit2 /></button>
+                            <button className="btn btn-icon btn-sm" style={{ color: 'var(--accent-orange)' }} onClick={() => openVoidModal(e)} title="Void (audit trail)"><FiX /></button>
+                          </>
+                        ) : (
+                          <span style={{ fontSize: 10, color: 'var(--text-muted)', padding: '0 4px' }}>Voided</span>
+                        )}
+                        <button className="btn btn-icon btn-sm" style={{ color: 'var(--accent-red)' }} onClick={() => handlePermanentDelete(e.id, e.amount, e.category)} title="Delete permanently"><FiTrash2 /></button>
                       </div>
                     </td>
                   </tr>
@@ -312,6 +376,42 @@ export default function ManageExpenses() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Void Expense Confirmation Modal */}
+      {showVoidModal && voidTarget && (
+        <div className="modal-overlay" onClick={() => setShowVoidModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Void Expense</h3>
+              <button className="modal-close" onClick={() => setShowVoidModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: 16, color: 'var(--text-secondary)', fontSize: 14 }}>
+                Voiding <strong>-₵{voidTarget.amount?.toFixed(2)}</strong> expense in <strong>{voidTarget.category}</strong>.
+                This will remove it from financial calculations while preserving the audit trail.
+              </p>
+              <div className="form-group">
+                <label className="form-label">Reason for Voiding *</label>
+                <textarea
+                  className="form-input"
+                  rows={3}
+                  placeholder="e.g. Incorrect amount, duplicate entry, refund received..."
+                  value={voidReason}
+                  onChange={e => setVoidReason(e.target.value)}
+                  style={{ resize: 'vertical' }}
+                  required
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-secondary" onClick={() => setShowVoidModal(false)}>Cancel</button>
+              <button type="button" className="btn btn-danger" onClick={handleVoidExpense} disabled={!voidReason.trim()}>
+                <FiX /> Void Expense
+              </button>
+            </div>
           </div>
         </div>
       )}
