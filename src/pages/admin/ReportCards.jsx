@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
-import { FiPrinter } from 'react-icons/fi';
+import { FiPrinter, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import Layout from '../../components/Layout';
 import { sortClasses } from '../../utils/sanitize';
 
@@ -15,6 +15,7 @@ export default function ReportCards() {
   
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedTerm, setSelectedTerm] = useState('Term 1');
+  const [selectedStudentIndex, setSelectedStudentIndex] = useState(0);
 
   useEffect(() => {
     async function fetchData() {
@@ -41,10 +42,18 @@ export default function ReportCards() {
 
   const classStudents = students.filter(s => s.classId === selectedClass);
   const getSubjectName = (id) => subjects.find(s => s.id === id)?.name || id;
+  const student = classStudents[selectedStudentIndex];
+
+  useEffect(() => {
+    setSelectedStudentIndex(0);
+  }, [selectedClass, selectedTerm]);
 
   const handlePrint = () => {
     window.print();
   };
+
+  const goPrev = () => setSelectedStudentIndex(i => Math.max(0, i - 1));
+  const goNext = () => setSelectedStudentIndex(i => Math.min(classStudents.length - 1, i + 1));
 
   if (loading) return <Layout><div className="loading-spinner"><div className="spinner"></div></div></Layout>;
 
@@ -52,10 +61,10 @@ export default function ReportCards() {
     <Layout>
       <style>{`
         @media print {
-          .sidebar, .top-bar, .search-bar, .print-hide { display: none !important; }
+          .sidebar, .top-bar, .print-hide, .student-nav { display: none !important; }
           .main-content { margin-left: 0 !important; }
           .page-content { padding: 0 !important; background: white !important; }
-          .report-card { page-break-after: always; box-shadow: none !important; border: 1px solid #ccc !important; margin: 0 !important; margin-bottom: 20px !important; }
+          .report-card { box-shadow: none !important; border: 1px solid #ccc !important; margin: 0 !important; }
           body { background: white; }
         }
       `}</style>
@@ -73,8 +82,8 @@ export default function ReportCards() {
           </select>
         </div>
         <div style={{ flex: 1 }} />
-        <button className="btn btn-primary" onClick={handlePrint} disabled={!selectedClass || classStudents.length === 0}>
-          <FiPrinter /> Print Report Cards
+        <button className="btn btn-primary" onClick={handlePrint} disabled={!student}>
+          <FiPrinter /> Print
         </button>
       </div>
 
@@ -99,8 +108,29 @@ export default function ReportCards() {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-          {classStudents.map(student => {
+        <>
+          <div className="student-nav print-hide" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 24, padding: '12px 20px', background: 'var(--bg-card)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
+            <button className="btn btn-sm btn-secondary" onClick={goPrev} disabled={selectedStudentIndex === 0}>
+              <FiChevronLeft /> Previous
+            </button>
+            <select
+              className="form-select" style={{ width: 'auto', minWidth: 220, textAlign: 'center' }}
+              value={selectedStudentIndex}
+              onChange={e => setSelectedStudentIndex(Number(e.target.value))}
+            >
+              {classStudents.map((s, i) => (
+                <option key={s.id} value={i}>{s.name} ({s.studentId || '—'})</option>
+              ))}
+            </select>
+            <button className="btn btn-sm btn-secondary" onClick={goNext} disabled={selectedStudentIndex === classStudents.length - 1}>
+              Next <FiChevronRight />
+            </button>
+            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+              {selectedStudentIndex + 1} of {classStudents.length}
+            </span>
+          </div>
+
+          {(() => {
             const studentResults = allResults.filter(r => r.studentId === student.id && r.term === selectedTerm);
             let overallTotal = 0;
             let subjectCount = 0;
@@ -190,8 +220,8 @@ export default function ReportCards() {
                 </div>
               </div>
             );
-          })}
-        </div>
+          })()}
+        </>
       )}
     </Layout>
   );
