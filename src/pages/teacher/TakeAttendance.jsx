@@ -122,10 +122,10 @@ export default function TakeAttendance() {
               <div className="attendance-grid">
                 {classStudents.map(s => (
                   <div className="attendance-row" key={s.id}>
-                    <div className="name-cell">
+                    <div className="name-cell" style={{ flex: 1, minWidth: 0 }}>
                       <div className="avatar-sm">{s.name?.[0]}</div>
-                      <div>
-                        <strong style={{ color: 'var(--text)', fontSize: 14 }}>{s.name}</strong>
+                      <div style={{ minWidth: 0 }}>
+                        <strong style={{ color: 'var(--text)', fontSize: 14, wordBreak: 'break-word' }}>{s.name}</strong>
                         <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{s.studentId || ''}</div>
                       </div>
                     </div>

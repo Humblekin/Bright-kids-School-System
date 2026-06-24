@@ -409,24 +409,48 @@ img { max-width: 100%; display: block; }
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99;
 }
 
+@media (max-width: 900px) {
+  .search-bar { flex-wrap: wrap; }
+  .search-input-wrapper { min-width: 100%; }
+}
+
 @media (max-width: 768px) {
   .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
   .sidebar-overlay.show { display: block; }
   .main-content { margin-left: 0; }
   .menu-toggle { display: block; }
-  .top-bar { padding: 0 16px; }
-  .page-content { padding: 20px 16px; }
+  .top-bar { padding: 0 12px; height: 60px; }
+  .top-bar-left h1 { font-size: 16px; }
+  .top-bar-right .btn-icon { padding: 10px; }
+  .page-content { padding: 16px 12px; }
   .form-row { grid-template-columns: 1fr; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-  .data-table { font-size: 13px; }
-  .data-table th, .data-table td { padding: 10px 8px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat-card { padding: 16px; }
+  .stat-card-value { font-size: 22px; }
+  .data-table { font-size: 12px; }
+  .data-table th, .data-table td { padding: 8px 6px; white-space: nowrap; }
+  .content-card-body { padding: 16px; }
+  .content-card-header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+  .content-card-header h3 { font-size: 14px; }
+  .content-card { border-radius: var(--radius); }
+  .btn { padding: 8px 14px; font-size: 13px; }
+  .btn-sm { padding: 6px 10px; font-size: 12px; }
+  .form-input, .form-select { padding: 8px 10px; font-size: 13px; }
+  .modal { width: 95%; margin: 10px; }
+  .modal-body { padding: 16px; }
+  .filters-row { grid-template-columns: 1fr !important; }
 }
 
 @media (max-width: 480px) {
   .stats-grid { grid-template-columns: 1fr; }
-  .login-card { padding: 32px 24px; }
+  .login-card { padding: 28px 20px; }
   .attendance-row { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .attendance-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+  .att-btn { padding: 10px 8px; font-size: 13px; text-align: center; justify-content: center; width: 100%; }
+  .top-bar-right .btn-icon { padding: 12px; }
+  .page-content { padding: 12px 10px; }
+  .content-card-header { flex-direction: column; align-items: flex-start; }
 }
 
 /* ===== PREMIUM ANNOUNCEMENT CARDS ===== */
