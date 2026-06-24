@@ -23,6 +23,7 @@ const adminNav = [
     { to: '/admin/expenses', icon: <FiDollarSign />, label: 'Expenses' },
   ]},
   { section: 'System', items: [
+    { to: '/admin/users', icon: <FiUsers />, label: 'User Roles' },
     { to: '/admin/settings', icon: <FiSettings />, label: 'School Settings' },
   ]},
 ];
@@ -39,13 +40,27 @@ const teacherNav = [
   ]},
 ];
 
+const accountantNav = [
+  { section: 'Main', items: [
+    { to: '/accountant', icon: <FiHome />, label: 'Dashboard' },
+  ]},
+  { section: 'Finance', items: [
+    { to: '/accountant/fees', icon: <FiDollarSign />, label: 'Manage Fees' },
+    { to: '/accountant/expenses', icon: <FiDollarSign />, label: 'Expenses' },
+    { to: '/accountant/sms', icon: <FiMessageSquare />, label: 'Send SMS' },
+  ]},
+  { section: 'General', items: [
+    { to: '/accountant/announcements', icon: <FiBell />, label: 'Announcements' },
+  ]},
+];
+
 export default function Layout({ children }) {
   const { userData, logout } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const role = userData?.role || 'admin';
-  const navConfig = role === 'admin' ? adminNav : teacherNav;
+  const navConfig = role === 'admin' ? adminNav : role === 'accountant' ? accountantNav : teacherNav;
   const initials = userData?.name ? userData.name.split(' ').map(n => n[0]).join('').toUpperCase() : '?';
 
   const handleLogout = async () => {

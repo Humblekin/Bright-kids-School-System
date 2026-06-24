@@ -15,12 +15,15 @@ import ManageClasses from './pages/admin/ManageClasses';
 import ManageSubjects from './pages/admin/ManageSubjects';
 import ManageFees from './pages/admin/ManageFees';
 import SchoolSettings from './pages/admin/SchoolSettings';
+import ManageUsers from './pages/admin/ManageUsers';
 import SmsSender from './pages/admin/SmsSender';
 import ReportCards from './pages/admin/ReportCards';
 import ManageExpenses from './pages/admin/ManageExpenses';
 
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import TakeAttendance from './pages/teacher/TakeAttendance';
+
+import AccountantDashboard from './pages/accountant/AccountantDashboard';
 
 export default function App() {
   return (
@@ -44,6 +47,7 @@ export default function App() {
           <Route path="/admin/sms" element={<ProtectedRoute allowedRoles={['admin']}><SmsSender /></ProtectedRoute>} />
           <Route path="/admin/expenses" element={<ProtectedRoute allowedRoles={['admin']}><ManageExpenses /></ProtectedRoute>} />
           <Route path="/admin/settings" element={<ProtectedRoute allowedRoles={['admin']}><SchoolSettings /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><ManageUsers /></ProtectedRoute>} />
           <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={['admin']}><Profile /></ProtectedRoute>} />
 
           {/* Teacher Routes */}
@@ -53,6 +57,14 @@ export default function App() {
           <Route path="/teacher/results" element={<ProtectedRoute allowedRoles={['teacher']}><EnterResults /></ProtectedRoute>} />
           <Route path="/teacher/announcements" element={<ProtectedRoute allowedRoles={['teacher']}><Announcements /></ProtectedRoute>} />
           <Route path="/teacher/profile" element={<ProtectedRoute allowedRoles={['teacher']}><Profile /></ProtectedRoute>} />
+
+          {/* Accountant Routes */}
+          <Route path="/accountant" element={<ProtectedRoute allowedRoles={['accountant']}><AccountantDashboard /></ProtectedRoute>} />
+          <Route path="/accountant/fees" element={<ProtectedRoute allowedRoles={['accountant']}><ManageFees /></ProtectedRoute>} />
+          <Route path="/accountant/expenses" element={<ProtectedRoute allowedRoles={['accountant']}><ManageExpenses /></ProtectedRoute>} />
+          <Route path="/accountant/sms" element={<ProtectedRoute allowedRoles={['accountant']}><SmsSender /></ProtectedRoute>} />
+          <Route path="/accountant/announcements" element={<ProtectedRoute allowedRoles={['accountant']}><Announcements /></ProtectedRoute>} />
+          <Route path="/accountant/profile" element={<ProtectedRoute allowedRoles={['accountant']}><Profile /></ProtectedRoute>} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/login" />} />
